@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GENBA AUTO DOC - 現場写真自動図書化システム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            line-height: 1.6;
+            padding-bottom: 50px;
+        }
+        
+        .container {
+            max-width: 390px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .step {
+            border-left: 4px solid #667eea;
+            padding-left: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .step h3 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .project-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            margin-bottom: 15px;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+            position: relative;
+            margin: 15px 0;
+        }
+        
+        .upload-area:hover {
+            border-color: #5a6fd8;
+            background: #f0f3ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #4a5ed6;
+            background: #e8efff;
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+        
+        .upload-text {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .photo-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .photo-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            color: white;
+            padding: 8px 5px 5px;
+            font-size: 11px;
+            text-align: center;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+            width: 0;
+        }
+        
+        .results {
+            margin-top: 20px;
+        }
+        
+        .category-group {
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .category-header {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            font-weight: bold;
+            color: #333;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .category-photos {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            padding: 10px;
+        }
+        
+        .category-photo {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            overflow: hidden;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        
+        .category-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 15px 10px;
+            background: linear-gradient(135deg, #f8f9ff, #f0f3ff);
+            border-radius: 8px;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        .demo-note {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .demo-note strong {
+            color: #b8860b;
+        }
+        
+        @media (max-width: 350px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .photo-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📸 GENBA AUTO DOC</h1>
+            <p>現場写真 → 完成図書 自動生成デモ</p>
+        </div>
+        
+        <div class="demo-note">
+            <strong>🎯 デモ用途:</strong> 中堅ゼネコン向け営業プレゼン<br>
+            実際のAI分類・PDF生成機能のモックアップです
+        </div>
+        
+        <div class="card">
+            <div class="step">
+                <h3>STEP 1: 現場プロジェクト選択</h3>
+                <select class="project-select" id="projectSelect">
+                    <option value="">現場を選択してください</option>
+                    <option value="fukushima_building">福島市◯◯ビル新築工事</option>
+                    <option value="sendai_mansion">仙台◯◯マンション改修工事</option>
+                    <option value="iwaki_factory">いわき◯◯工場増築工事</option>
+                    <option value="koriyama_office">郡山◯◯オフィス新築工事</option>
+                    <option value="aizu_hospital">会津◯◯病院改修工事</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="step">
+                <h3>STEP 2: 現場写真アップロード</h3>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📷</div>
+                    <div class="upload-text">
+                        写真をドラッグ&ドロップ<br>
+                        または<strong>タップして選択</strong>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+                
+                <div class="photo-grid" id="photoGrid"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="step">
+                <h3>STEP 3: AI自動分類実行</h3>
+                <button class="btn btn-primary" id="processBtn" disabled>
+                    🤖 AI分析開始
+                </button>
+                <div class="progress-bar hidden" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card hidden" id="resultsCard">
+            <div class="step">
+                <h3>STEP 4: 分類結果 & 完成図書生成</h3>
+                
+                <div class="stats" id="statsGrid">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalPhotos">0</div>
+                        <div class="stat-label">総写真数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="categories">0</div>
+                        <div class="stat-label">分類済</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="timeSaved">0</div>
+                        <div class="stat-label">削減時間(h)</div>
+                    </div>
+                </div>
+                
+                <div class="results" id="results"></div>
+                
+                <button class="btn btn-primary" id="generatePdfBtn">
+                    📄 完成図書PDF生成
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        class GenbaAutoDoc {
+            constructor() {
+                this.uploadedPhotos = [];
+                this.categories = {
+                    '着工前': { icon: '🏗️', photos: [], color: '#6c757d' },
+                    '基礎工事': { icon: '🏗️', photos: [], color: '#28a745' },
+                    '鉄骨建方': { icon: '🏗️', photos: [], color: '#007bff' },
+                    '内装工事': { icon: '🎨', photos: [], color: '#ffc107' },
+                    '完成': { icon: '✨', photos: [], color: '#17a2b8' }
+                };
+                this.demoPhotos = this.generateDemoPhotos();
+                this.initEventListeners();
+            }
+            
+            generateDemoPhotos() {
+                const demoData = [
+                    { category: '着工前', count: 8, baseIndex: 1 },
+                    { category: '基礎工事', count: 12, baseIndex: 9 },
+                    { category: '鉄骨建方', count: 15, baseIndex: 21 },
+                    { category: '内装工事', count: 18, baseIndex: 36 },
+                    { category: '完成', count: 7, baseIndex: 54 }
+                ];
+                
+                const photos = [];
+                demoData.forEach(group => {
+                    for (let i = 0; i < group.count; i++) {
+                        photos.push({
+                            id: group.baseIndex + i,
+                            category: group.category,
+                            filename: `${group.category.replace(/工事|前/, '')}_${String(i + 1).padStart(2, '0')}.jpg`,
+                            date: this.generateRandomDate(),
+                            src: `assets/demo/construction_photos/${group.category.replace(/工事|前/, '')}_${String(i + 1).padStart(2, '0')}.jpg`
+                        });
+                    }
+                });
+                
+                return this.shuffleArray(photos);
+            }
+            
+            generateRandomDate() {
+                const start = new Date(2024, 0, 1);
+                const end = new Date(2024, 11, 31);
+                const date = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+                return date.toISOString().split('T')[0];
+            }
+            
+            shuffleArray(array) {
+                const shuffled = [...array];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+            }
+            
+            initEventListeners() {
+                const projectSelect = document.getElementById('projectSelect');
+                const uploadArea = document.getElementById('uploadArea');
+                const fileInput = document.getElementById('fileInput');
+                const processBtn = document.getElementById('processBtn');
+                const generatePdfBtn = document.getElementById('generatePdfBtn');
+                
+                projectSelect.addEventListener('change', () => {
+                    this.updateProcessButton();
+                });
+                
+                uploadArea.addEventListener('click', () => {
+                    fileInput.click();
+                });
+                
+                uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.add('dragover');
+                });
+                
+                uploadArea.addEventListener('dragleave', () => {
+                    uploadArea.classList.remove('dragover');
+                });
+                
+                uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.remove('dragover');
+                    this.handleFiles(e.dataTransfer.files);
+                });
+                
+                fileInput.addEventListener('change', (e) => {
+                    this.handleFiles(e.target.files);
+                });
+                
+                processBtn.addEventListener('click', () => {
+                    this.processPhotos();
+                });
+                
+                generatePdfBtn.addEventListener('click', () => {
+                    this.generatePDF();
+                });
+            }
+            
+            handleFiles(files) {
+                // デモ用: 実際のファイルの代わりにランダムなデモ写真を使用
+                const fileCount = Math.min(files.length, 60);
+                const selectedPhotos = this.demoPhotos.slice(0, fileCount);
+                
+                this.uploadedPhotos = selectedPhotos.map((photo, index) => ({
+                    ...photo,
+                    file: files[index] || null
+                }));
+                
+                this.renderUploadedPhotos();
+                this.updateProcessButton();
+                
+                this.showToast(`${fileCount}枚の写真をアップロードしました`);
+            }
+            
+            renderUploadedPhotos() {
+                const photoGrid = document.getElementById('photoGrid');
+                photoGrid.innerHTML = '';
+                
+                this.uploadedPhotos.slice(0, 20).forEach((photo, index) => {
+                    const photoDiv = document.createElement('div');
+                    photoDiv.className = 'photo-item';
+                    
+                    const img = document.createElement('img');
+                    img.src = photo.src;
+                    img.alt = `現場写真 ${index + 1}`;
+                    img.onerror = () => {
+                        photoDiv.innerHTML = '📷';
+                        photoDiv.style.background = 'linear-gradient(45deg, #667eea, #764ba2)';
+                        photoDiv.style.color = 'white';
+                    };
+                    
+                    const label = document.createElement('div');
+                    label.className = 'photo-label';
+                    label.textContent = `${index + 1}. ${photo.filename}`;
+                    
+                    photoDiv.appendChild(img);
+                    photoDiv.appendChild(label);
+                    photoGrid.appendChild(photoDiv);
+                });
+                
+                if (this.uploadedPhotos.length > 20) {
+                    const moreDiv = document.createElement('div');
+                    moreDiv.className = 'photo-item';
+                    moreDiv.innerHTML = `<div style="color: #667eea; font-weight: bold;">+${this.uploadedPhotos.length - 20}</div>`;
+                    moreDiv.style.background = 'linear-gradient(45deg, #f8f9ff, #f0f3ff)';
+                    photoGrid.appendChild(moreDiv);
+                }
+            }
+            
+            updateProcessButton() {
+                const projectSelect = document.getElementById('projectSelect');
+                const processBtn = document.getElementById('processBtn');
+                
+                const hasProject = projectSelect.value !== '';
+                const hasPhotos = this.uploadedPhotos.length > 0;
+                
+                processBtn.disabled = !(hasProject && hasPhotos);
+            }
+            
+            async processPhotos() {
+                const processBtn = document.getElementById('processBtn');
+                const progressBar = document.getElementById('progressBar');
+                const progressFill = document.getElementById('progressFill');
+                
+                processBtn.disabled = true;
+                processBtn.textContent = '🤖 AI分析中...';
+                progressBar.classList.remove('hidden');
+                
+                // デモ用進捗アニメーション
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 100) progress = 100;
+                    
+                    progressFill.style.width = progress + '%';
+                    
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            this.showResults();
+                        }, 500);
+                    }
+                }, 200);
+            }
+            
+            showResults() {
+                // カテゴリ別に写真を分類
+                Object.keys(this.categories).forEach(category => {
+                    this.categories[category].photos = this.uploadedPhotos.filter(
+                        photo => photo.category === category
+                    );
+                });
+                
+                this.renderResults();
+                this.updateStats();
+                
+                document.getElementById('resultsCard').classList.remove('hidden');
+                
+                // 結果カードまでスクロール
+                document.getElementById('resultsCard').scrollIntoView({ 
+                    behavior: 'smooth' 
+                });
+                
+                this.showToast('AI分類が完了しました！');
+            }
+            
+            renderResults() {
+                const results = document.getElementById('results');
+                results.innerHTML = '';
+                
+                Object.entries(this.categories).forEach(([categoryName, categoryData]) => {
+                    if (categoryData.photos.length === 0) return;
+                    
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'category-group';
+                    
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'category-header';
+                    headerDiv.innerHTML = `${categoryData.icon} ${categoryName} (${categoryData.photos.length}枚)`;
+                    
+                    const photosDiv = document.createElement('div');
+                    photosDiv.className = 'category-photos';
+                    
+                    categoryData.photos.slice(0, 9).forEach((photo, index) => {
+                        const photoDiv = document.createElement('div');
+                        photoDiv.className = 'category-photo';
+                        
+                        const img = document.createElement('img');
+                        img.src = photo.src;
+                        img.alt = `${categoryName} ${index + 1}`;
+                        img.onerror = () => {
+                            photoDiv.innerHTML = categoryData.icon;
+                            photoDiv.style.background = categoryData.color;
+                            photoDiv.style.color = 'white';
+                        };
+                        
+                        photoDiv.appendChild(img);
+                        photosDiv.appendChild(photoDiv);
+                    });
+                    
+                    if (categoryData.photos.length > 9) {
+                        const moreDiv = document.createElement('div');
+                        moreDiv.className = 'category-photo';
+                        moreDiv.innerHTML = `+${categoryData.photos.length - 9}`;
+                        moreDiv.style.background = categoryData.color;
+                        moreDiv.style.color = 'white';
+                        moreDiv.style.fontSize = '12px';
+                        moreDiv.style.fontWeight = 'bold';
+                        photosDiv.appendChild(moreDiv);
+                    }
+                    
+                    groupDiv.appendChild(headerDiv);
+                    groupDiv.appendChild(photosDiv);
+                    results.appendChild(groupDiv);
+                });
+            }
+            
+            updateStats() {
+                const totalPhotos = this.uploadedPhotos.length;
+                const categorizedCount = Object.values(this.categories).reduce((sum, cat) => sum + cat.photos.length, 0);
+                const timeSaved = Math.floor(totalPhotos * 0.05 * 10) / 10; // 写真1枚あたり3分の削減
+                
+                document.getElementById('totalPhotos').textContent = totalPhotos;
+                document.getElementById('categories').textContent = categorizedCount;
+                document.getElementById('timeSaved').textContent = timeSaved;
+            }
+            
+            generatePDF() {
+                this.showToast('PDF生成中...');
+                
+                // デモ用: 実際のPDF生成の代わりに遅延後に完了メッセージ
+                setTimeout(() => {
+                    const projectSelect = document.getElementById('projectSelect');
+                    const projectName = projectSelect.options[projectSelect.selectedIndex].text;
+                    const filename = `${projectName}_完成図書_${new Date().toISOString().split('T')[0]}.pdf`;
+                    
+                    this.showToast(`「${filename}」のダウンロードが開始されました`, 5000);
+                    
+                    // ダウンロードリンクを作成（デモ用空ファイル）
+                    const link = document.createElement('a');
+                    link.href = 'data:application/pdf;base64,JVBERi0xLjMKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwKL0xlbmd0aCA1IDAKL0ZpbHRlciBbL0ZsYXRlRGVjb2RlXQo+PgpzdHJlYW0KeJxLy8wpTVWyUkpSKkotLs5ILFJSslJQysxLzE21UsrLL8pVUGxJzs8rKU8tUoIClSqiAk11yh0=';
+                    link.download = filename;
+                    link.click();
+                }, 2000);
+            }
+            
+            showToast(message, duration = 3000) {
+                const toast = document.getElementById('toast');
+                toast.textContent = message;
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, duration);
+            }
+        }
+        
+        // アプリケーション初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            new GenbaAutoDoc();
+        });
+    </script>
+</body>
+</html>
